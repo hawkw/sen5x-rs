@@ -24,20 +24,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "sen5x-rs"
-version = "0.1.0"
-dependencies = [
- "bitflags",
- "embedded-hal",
- "embedded-hal-async",
- "sensirion-i2c",
-]
-
-[[package]]
 name = "sensirion-i2c"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fb9009045fc9b4e9e37e670cc407baf85c216ebac2fb0932d4b6f490445bafc"
 dependencies = [
  "embedded-hal",
+]
+
+[[package]]
+name = "sensor-sen5x"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "embedded-hal",
+ "embedded-hal-async",
+ "sensirion-i2c",
 ]
