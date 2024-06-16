@@ -1,0 +1,13 @@
+[package]
+name = "sen5x-rs"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+fmt = []
+
+[dependencies]
+bitflags = "2"
+embedded-hal-async = { version = "1.0", optional = true }
+embedded-hal = { version = "1.0" }
+sensirion-i2c = "0.3"
