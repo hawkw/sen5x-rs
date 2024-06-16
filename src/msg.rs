@@ -5,14 +5,15 @@ pub(crate) trait Decode: Sized {
     fn decode(buf: &Self::Buf) -> Result<Self, DecodeError>;
 }
 
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "fmt", derive(Debug))]
-
 pub enum DecodeError {
     Crc,
     Msg(MessageError),
 }
 
 #[cfg_attr(feature = "fmt", derive(Debug))]
+#[derive(Clone)]
 pub struct MessageError {
     #[cfg(feature = "fmt")]
     msg: &'static str,
@@ -115,6 +116,33 @@ impl DecodeError {
     #[cfg(not(feature = "fmt"))]
     fn msg(_: &'static str) -> Self {
         Self::Msg(MessageError { _p: () })
+    }
+}
+
+#[cfg(feature = "fmt")]
+impl core::fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        match self {
+            Self::Crc => f.write_str("CRC8 checksum mismatch"),
+            Self::Msg(e) => e.fmt(f),
+        }
+    }
+}
+
+// === impl MessageError ===
+
+impl PartialEq for MessageError {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for MessageError {}
+
+#[cfg(feature = "fmt")]
+impl core::fmt::Display for MessageError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.write_str(self.msg)
     }
 }
 

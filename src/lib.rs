@@ -39,6 +39,35 @@ pub enum ParticulateMode {
     Disabled,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "fmt", derive(Debug))]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum SensorKind {
+    Sen50,
+    Sen54,
+    Sen55,
+}
+
+// === impl Error ===
+
+#[cfg(feature = "fmt")]
+impl<E: core::fmt::Display> core::fmt::Display for Error<E> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::I2cRead(e) => write!(f, "I²C read error: {e}"),
+            Self::I2cWrite(e) => write!(f, "I²C write error: {e}"),
+            Self::Decode(e) => write!(f, "error decoding message: {e}"),
+            Self::WrongMode(mode) => write!(
+                f,
+                "this operation can only be performed when the sensor is in the {mode:?} mode"
+            ),
+        }
+    }
+}
+
+// === impl Mode ===
+
 impl Mode {
     pub(crate) fn check<E>(self, expected: Self) -> Result<(), Error<E>> {
         if self == expected {
@@ -49,15 +78,7 @@ impl Mode {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "fmt", derive(Debug))]
-#[repr(u8)]
-#[non_exhaustive]
-pub enum SensorKind {
-    Sen50,
-    Sen54,
-    Sen55,
-}
+// === impl SensorKind ===
 
 impl core::str::FromStr for SensorKind {
     type Err = &'static str;
