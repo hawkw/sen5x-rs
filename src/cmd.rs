@@ -1,8 +1,6 @@
 use crate::msg::{self, Decode};
 
 pub(crate) trait ReadCommand {
-    const COMMAND: [u8; 2];
-    const EXECUTION_MS: usize;
     const RSP_BUF: Self::RspBuf;
     type RspBuf: AsMut<[u8]> + AsRef<[u8]>;
     type Rsp: Decode<Buf = Self::RspBuf>;
@@ -18,9 +16,12 @@ macro_rules! define_read_commands {
         $(
             pub(crate) struct $name;
 
-            impl ReadCommand for $name {
+            impl WriteCommand for $name {
                 const COMMAND: [u8; 2] = u16::to_be_bytes($cmd);
                 const EXECUTION_MS: usize = $exec;
+            }
+
+            impl ReadCommand for $name {
                 const RSP_BUF: [u8; $bytes] = [0; $bytes];
                 type RspBuf = [u8; $bytes];
                 type Rsp = $rsp;

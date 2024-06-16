@@ -1,3 +1,5 @@
+use core::fmt::Write;
+
 use crate::{
     cmd::{self, ReadCommand, WriteCommand},
     msg::{self, Decode},
@@ -9,15 +11,29 @@ pub struct AsyncSen5x<I> {
     i2c: I,
     mode: Mode,
     particulates: ParticulateMode,
+    addr: u8,
 }
 
 impl<I> AsyncSen5x<I> {
-    pub fn new(i2c: I) -> Self {
+    pub const fn new(i2c: I) -> Self {
         Self {
             i2c,
             mode: Mode::Idle,
             particulates: ParticulateMode::Enabled,
+            addr: I2C_ADDR,
         }
+    }
+
+    /// Set the I²C address of the sensor.
+    ///
+    /// The [`new()`](Self::new) constructor will use the sensor's default I²C
+    /// address (`0x69`). Use this method to set a different address, such as in
+    /// cases  an I²C multiplexer is in use.
+    #[inline]
+    #[must_use]
+    pub const fn with_i2c_address(mut self, addr: u8) -> Self {
+        self.addr = addr;
+        self
     }
 }
 
@@ -25,32 +41,28 @@ impl<I> AsyncSen5x<I>
 where
     I: I2c,
 {
-    async fn read_command<R: ReadCommand>(
-        &mut self,
-        delay: &mut impl DelayNs,
-    ) -> Result<R::Rsp, Error<I::Error>> {
-        let mut buf = R::RSP_BUF;
+    async fn read_command<C>(&mut self, delay: &mut impl DelayNs) -> Result<C::Rsp, Error<I::Error>>
+    where
+        C: WriteCommand + ReadCommand,
+    {
+        self.write_command::<C>(delay).await?;
+        let mut buf = C::RSP_BUF;
         self.i2c
-            .write(I2C_ADDR, &R::COMMAND)
-            .await
-            .map_err(Error::I2cWrite)?;
-        delay.delay_ms(R::EXECUTION_MS as u32).await;
-        self.i2c
-            .write_read(I2C_ADDR, &R::COMMAND, buf.as_mut())
+            .read(self.addr, buf.as_mut())
             .await
             .map_err(Error::I2cRead)?;
-        R::Rsp::decode(&buf).map_err(Error::Decode)
+        C::Rsp::decode(&buf).map_err(Error::Decode)
     }
 
-    async fn write_command<R: WriteCommand>(
-        &mut self,
-        delay: &mut impl DelayNs,
-    ) -> Result<(), Error<I::Error>> {
+    async fn write_command<C>(&mut self, delay: &mut impl DelayNs) -> Result<(), Error<I::Error>>
+    where
+        C: WriteCommand,
+    {
         self.i2c
-            .write(I2C_ADDR, &R::COMMAND)
+            .write(self.addr, &C::COMMAND)
             .await
             .map_err(Error::I2cWrite)?;
-        delay.delay_ms(R::EXECUTION_MS as u32).await;
+        delay.delay_ms(C::EXECUTION_MS as u32).await;
         Ok(())
     }
 
