@@ -151,13 +151,14 @@ impl core::fmt::Display for MessageError {
 impl Decode for DataReady {
     type Buf = [u8; 3];
     fn decode(data: &Self::Buf) -> Result<Self, DecodeError> {
-        if crc8::calculate(&data[1..2]) != data[2] {
+        if crc8::calculate(&data[0..2]) != data[2] {
             return Err(DecodeError::Crc);
         }
 
         if data[0] != 0 {
             return Err(DecodeError::msg("data ready packet must start with 0x00"));
         }
+
         match data[1] {
             0 => Ok(DataReady(false)),
             1 => Ok(DataReady(true)),
