@@ -189,12 +189,12 @@ impl Decode for RawMeasurement {
         Ok(Self {
             pm1_0: word![0; u16],
             pm2_5: word![3; u16],
-            pm4_0: word![4; u16],
-            pm10_0: word![6; u16],
+            pm4_0: word![6; u16],
+            pm10_0: word![9; u16],
             rh: word![9; i16],
-            temp: word![10; i16],
-            voc: word![12; i16],
-            nox: word![14; i16],
+            temp: word![12; i16],
+            voc: word![18; i16],
+            nox: word![21; i16],
         })
     }
 }
