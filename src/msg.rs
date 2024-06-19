@@ -191,8 +191,8 @@ impl Decode for RawMeasurement {
             pm2_5: word![3; u16],
             pm4_0: word![6; u16],
             pm10_0: word![9; u16],
-            rh: word![9; i16],
-            temp: word![12; i16],
+            rh: word![12; i16],
+            temp: word![15; i16],
             voc: word![18; i16],
             nox: word![21; i16],
         })
