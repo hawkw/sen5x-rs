@@ -5,6 +5,7 @@ use crate::{
     msg::{self, Decode},
     Error, Mode, ParticulateMode, I2C_ADDR,
 };
+use embedded_hal::delay;
 use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 
 pub struct AsyncSen5x<I> {
@@ -98,6 +99,32 @@ where
         self.write_command::<cmd::StopMeasurement>(delay).await?;
         self.mode = Mode::Idle;
         Ok(())
+    }
+
+    pub async fn wait_for_data(&mut self, delay: &mut impl DelayNs) -> Result<(), Error<I::Error>> {
+        self.wait_for_data_with_interval(delay, 20).await
+    }
+
+    // TODO(eliza): consider making this public?
+    async fn wait_for_data_with_interval(
+        &mut self,
+        delay: &mut impl DelayNs,
+        interval_ms: u32,
+    ) -> Result<(), Error<I::Error>> {
+        self.mode.check(Mode::Measuring)?;
+        while !self.data_ready(delay).await? {
+            delay.delay_ms(interval_ms).await;
+        }
+        Ok(())
+    }
+
+    /// Waits until a measurement is ready and reads data from the sensor.
+    pub async fn measure(
+        &mut self,
+        delay: &mut impl DelayNs,
+    ) -> Result<msg::Measurements, Error<I::Error>> {
+        self.wait_for_data(delay).await?;
+        self.read_command::<cmd::ReadMeasurement>(delay).await
     }
 
     /// Reads the measurement data from the sensor.
