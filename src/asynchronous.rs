@@ -114,7 +114,7 @@ where
     pub async fn read_raw_measurement(
         &mut self,
         delay: &mut impl DelayNs,
-    ) -> Result<msg::RawMeasurement, Error<I::Error>> {
+    ) -> Result<msg::Measurements, Error<I::Error>> {
         self.mode.check(Mode::Measuring)?;
         self.read_command::<cmd::ReadMeasurement>(delay).await
     }

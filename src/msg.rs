@@ -51,7 +51,7 @@ pub struct RawString {
 /// | 20     | CRC8 |              |                                         |
 /// | 21..22 | i16  | 10           | NOx Index                               |
 /// | 23     | CRC8 |              |                                         |
-pub struct RawMeasurement {
+pub struct Measurements {
     pm1_0: Option<u16>,
     pm2_5: Option<u16>,
     pm4_0: Option<u16>,
@@ -169,9 +169,9 @@ impl Decode for DataReady {
     }
 }
 
-// === impl RawMeasurement ===
+// === impl Measurements ===
 
-impl Decode for RawMeasurement {
+impl Decode for Measurements {
     type Buf = [u8; 24];
     fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
         macro_rules! word {
@@ -205,7 +205,7 @@ macro_rules! scale_float {
     };
 }
 
-impl RawMeasurement {
+impl Measurements {
     /// Returns the ambient temperature in Celcius as a [`f32`], or [`None`] if
     /// no temperature reading was present.
     #[must_use]
