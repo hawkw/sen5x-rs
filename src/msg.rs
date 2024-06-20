@@ -62,6 +62,19 @@ pub struct Measurements {
     nox: Option<i16>,
 }
 
+/// Raw measurement signals.
+///
+/// See [the Sensirion application note on reading raw signals][appnote] for
+/// details on these values.
+///
+/// [appnote]: https://sensirion.com/media/documents/2B6FC1F3/649C3D0E/PS_AN_Read_RHT_VOC_and_NOx_RAW_signals_v2_D1.pdf
+pub struct RawSignals {
+    humidity: Option<i16>,
+    temp: Option<i16>,
+    voc: Option<u16>,
+    nox: Option<u16>,
+}
+
 bitflags::bitflags! {
     pub struct SensorStatus: u32 {
         /// `FAN`: Fan failure, fan is mechanically blocked or broken.
@@ -169,40 +182,44 @@ impl Decode for DataReady {
     }
 }
 
-// === impl Measurements ===
-
-impl Decode for Measurements {
-    type Buf = [u8; 24];
-    fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
-        macro_rules! word {
-            [$idx:expr; $T:ty] => {{
-                let bytes = [buf[$idx], buf[$idx + 1]];
-                if crc8::calculate(&bytes) != buf[$idx + 2] {
-                    return Err(DecodeError::Crc);
-                }
-                match <$T>::from_be_bytes(bytes) {
-                    <$T>::MAX => None,
-                    x => Some(x as $T),
-                }
-            } };
+macro_rules! word {
+    ($buf:ident[$idx:expr]) => {
+        word!($buf[$idx] as u16)
+    };
+    ($buf:ident[$idx:expr] as $T:ty) => {{
+        let bytes = [$buf[$idx], $buf[$idx + 1]];
+        if crc8::calculate(&bytes) != $buf[$idx + 2] {
+            return Err(DecodeError::Crc);
         }
-        Ok(Self {
-            pm1_0: word![0; u16],
-            pm2_5: word![3; u16],
-            pm4_0: word![6; u16],
-            pm10_0: word![9; u16],
-            rh: word![12; i16],
-            temp: word![15; i16],
-            voc: word![18; i16],
-            nox: word![21; i16],
-        })
-    }
+        match <$T>::from_be_bytes(bytes) {
+            <$T>::MAX => None,
+            x => Some(x as $T),
+        }
+    }};
 }
 
 macro_rules! scale_float {
     ($field:expr, $scale:expr) => {
         $field.map(|v| v as f32 / $scale)
     };
+}
+
+// === impl Measurements ===
+
+impl Decode for Measurements {
+    type Buf = [u8; 24];
+    fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
+        Ok(Self {
+            pm1_0: word!(buf[0]),
+            pm2_5: word!(buf[3]),
+            pm4_0: word!(buf[6]),
+            pm10_0: word!(buf[9]),
+            rh: word!(buf[12] as i16),
+            temp: word!(buf[15] as i16),
+            voc: word!(buf[18] as i16),
+            nox: word!(buf[21] as i16),
+        })
+    }
 }
 
 impl Measurements {
@@ -288,6 +305,60 @@ impl Measurements {
     #[must_use]
     pub fn pm10_0(&self) -> Option<f32> {
         scale_float!(self.pm10_0, 10.0)
+    }
+}
+
+// === impl RawSignals ===
+
+impl Decode for RawSignals {
+    type Buf = [u8; 12];
+    fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
+        Ok(Self {
+            humidity: word!(buf[0] as i16),
+            temp: word!(buf[3] as i16),
+            voc: word!(buf[6]),
+            nox: word!(buf[9]),
+        })
+    }
+}
+
+impl RawSignals {
+    /// Returns the raw temperature reading in Celcius as a [`f32`], or [`None`] if
+    /// no temperature reading was present.
+    #[must_use]
+    pub fn raw_temp_c(&self) -> Option<f32> {
+        scale_float!(self.temp, 200.0)
+    }
+
+    /// Returns the raw relative humidity percentage (%RH) as a [`f32`], or
+    /// [`None`] if no humidity reading was present.
+    #[must_use]
+    pub fn raw_relative_humidity(&self) -> Option<f32> {
+        scale_float!(self.humidity, 100.0)
+    }
+
+    /// Returns the raw VOC signal as a [`u16`], or [`None`] if no VOC signal
+    /// was present.
+    ///
+    /// Note that Sensirion does not provide any specification for interpreting
+    /// this value.
+    #[must_use]
+    pub fn raw_voc_signal(&self) -> Option<u16> {
+        self.voc
+    }
+
+    /// Returns the raw nitrogen oxide (NOx) signal as a [`u16`], or [`None`] if
+    /// no NOx signal was present.
+    ///
+    /// # Notes
+    ///
+    /// - Sensirion does not provide any specification for interpreting this raw
+    ///   measurement value.
+    /// - The NOx signal will not be present for the first 10-11 seconds after
+    ///   the sensor is powered up.
+    #[must_use]
+    pub fn nox_index(&self) -> Option<u16> {
+        self.nox
     }
 }
 

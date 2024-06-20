@@ -100,7 +100,7 @@ where
         Ok(())
     }
 
-    /// Reads the raw measurement data from the sensor.
+    /// Reads the measurement data from the sensor.
     ///
     /// # Notes
     ///
@@ -111,12 +111,39 @@ where
     /// - This method does *not* wait for new data to be available. It may
     ///   return the same data multiple times. Use the
     ///   [`data_ready()`](Self::data_ready) method to check if new data is available.
-    pub async fn read_raw_measurement(
+    pub async fn read_measurements(
         &mut self,
         delay: &mut impl DelayNs,
     ) -> Result<msg::Measurements, Error<I::Error>> {
         self.mode.check(Mode::Measuring)?;
         self.read_command::<cmd::ReadMeasurement>(delay).await
+    }
+
+    /// Reads raw temperature, relative humidity, VOC, and NOx signals from the
+    /// sensor.
+    ///
+    /// # Notes
+    ///
+    /// - In order to read a measurement, the sensor must be in measurement
+    ///   mode. Use the [`start_measurement()`](Self::start_measurement) method
+    ///   to enter measurement mode.
+    ///
+    /// - This method does *not* wait for new data to be available. It may
+    ///   return the same data multiple times. Use the
+    ///   [`data_ready()`](Self::data_ready) method to check if new data is
+    ///   available.
+    ///
+    /// - Sensirion does not provide a specification for interpreting these
+    ///   values. See the [application note on reading raw signals][appnote] for
+    ///   details.
+    ///
+    /// [appnote]: https://sensirion.com/media/documents/2B6FC1F3/649C3D0E/PS_AN_Read_RHT_VOC_and_NOx_RAW_signals_v2_D1.pdf
+    pub async fn read_raw_signals(
+        &mut self,
+        delay: &mut impl DelayNs,
+    ) -> Result<msg::RawSignals, Error<I::Error>> {
+        self.mode.check(Mode::Measuring)?;
+        self.read_command::<cmd::ReadRawSignals>(delay).await
     }
 
     pub async fn start_fan_cleaning(

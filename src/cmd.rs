@@ -45,7 +45,8 @@ macro_rules! define_write_commands {
 
 define_read_commands! {
     struct ReadDataReady<msg::DataReady>: 0x0202, 20 ms, [3];
-    struct ReadMeasurement <msg::Measurements>: 0x03C4, 20 ms, [24];
+    struct ReadMeasurement<msg::Measurements>: 0x03C4, 20 ms, [24];
+    struct ReadRawSignals<msg::RawSignals>: 0x03D2, 20 ms, [12];
     struct ReadProductName<msg::RawString>: 0xD014, 20 ms, [47];
     struct ReadSerialNumber<msg::RawString>: 0xD033, 20 ms, [47];
 }
