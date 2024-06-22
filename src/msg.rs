@@ -23,6 +23,26 @@ pub struct MessageError {
 
 pub(crate) struct DataReady(pub(crate) bool);
 
+/// Sensor version information.
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "fmt", derive(Debug))]
+pub struct VersionInfo {
+    /// The sensor's firmware version.
+    pub firmware: Version,
+    /// Whether the sensor firmware was compiled in debug mode.
+    pub firmware_debug: bool,
+    /// Sensor hardware version.
+    pub hardware: Version,
+    /// Sensor protocol version.
+    pub protocol: Version,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Version {
+    pub major: u8,
+    pub minor: u8,
+}
+
 /// A raw string in the device's representation.
 pub struct RawString {
     bytes: [u8; Self::LEN],
@@ -139,6 +159,12 @@ impl core::fmt::Display for DecodeError {
             Self::Crc => f.write_str("CRC8 checksum mismatch"),
             Self::Msg(e) => e.fmt(f),
         }
+    }
+}
+
+impl From<sensirion_i2c::crc8::Error> for DecodeError {
+    fn from(_: sensirion_i2c::crc8::Error) -> Self {
+        Self::Crc
     }
 }
 
@@ -363,6 +389,7 @@ impl RawSignals {
 }
 
 // === impl RawString ===
+
 impl RawString {
     const LEN: usize = 32;
 
@@ -407,3 +434,48 @@ impl Decode for RawString {
         Ok(this)
     }
 }
+
+// === impl VersionInfo ===
+
+impl Decode for VersionInfo {
+    type Buf = [u8; 12];
+    fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
+        crc8::validate(&buf[..])?;
+
+        Ok(VersionInfo {
+            firmware: Version {
+                major: buf[0],
+                minor: buf[1],
+            },
+            firmware_debug: buf[4] != 0,
+            hardware: Version {
+                major: buf[5],
+                minor: buf[7],
+            },
+            protocol: Version {
+                major: buf[8],
+                minor: buf[10],
+            },
+        })
+    }
+}
+
+impl VersionInfo {
+    /// Returns `true` if the sensor firmware supports the `read_pm_values`
+    /// command.
+    pub fn supports_full_pm_values(&self) -> bool {
+        self.firmware.major > 0 || self.firmware.minor >= 7
+    }
+}
+
+// === impl Version ===
+
+#[cfg(feature = "fmt")]
+impl core::fmt::Debug for Version {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let Self { major, minor } = self;
+        write!(f, "{major}.{minor}")
+    }
+}
+
+// impl FirmwareVersion {}

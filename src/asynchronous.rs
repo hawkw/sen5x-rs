@@ -1,11 +1,8 @@
-use core::fmt::Write;
-
 use crate::{
     cmd::{self, ReadCommand, WriteCommand},
     msg::{self, Decode},
     Error, Mode, ParticulateMode, I2C_ADDR,
 };
-use embedded_hal::delay;
 use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 
 pub struct AsyncSen5x<I> {
