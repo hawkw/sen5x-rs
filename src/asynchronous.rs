@@ -76,10 +76,10 @@ where
         {
             let buf = buf.as_mut();
             buf[..2].copy_from_slice(&C::COMMAND);
-            data.encode(&mut buf.as_mut()[2..]);
+            data.encode(&mut buf[2..]);
         };
         self.i2c
-            .write(self.addr, &buf.as_ref())
+            .write(self.addr, buf.as_ref())
             .await
             .map_err(Error::I2cWrite)?;
         delay.delay_ms(C::EXECUTION_MS as u32).await;
