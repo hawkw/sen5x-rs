@@ -137,6 +137,12 @@ where
             .await
     }
 
+    pub async fn reset(&mut self, delay: &mut impl DelayNs) -> Result<(), Error<I::Error>> {
+        self.write_command::<cmd::Reset>(delay).await?;
+        self.mode = Mode::Idle;
+        Ok(())
+    }
+
     pub async fn wait_for_data(&mut self, delay: &mut impl DelayNs) -> Result<(), Error<I::Error>> {
         self.wait_for_data_with_interval(delay, 20).await
     }

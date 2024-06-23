@@ -69,4 +69,5 @@ define_write_commands! {
     struct StartMeasurementNoParticulates: 0x0037, 50 ms;
     struct StopMeasurement: 0x0104, 200 ms;
     struct StartFanCleaning: 0x5607, 20 ms;
+    struct Reset: 0xD304, 100 ms;
 }
