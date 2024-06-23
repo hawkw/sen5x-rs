@@ -5,6 +5,10 @@ pub(crate) trait Decode: Sized {
     fn decode(buf: &Self::Buf) -> Result<Self, DecodeError>;
 }
 
+pub(crate) trait Encode: Sized {
+    fn encode(self, buf: &mut [u8]);
+}
+
 #[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "fmt", derive(Debug))]
 pub enum DecodeError {
@@ -478,4 +482,20 @@ impl core::fmt::Debug for Version {
     }
 }
 
-// impl FirmwareVersion {}
+// === impl u16 ===
+
+impl Decode for u16 {
+    type Buf = [u8; 3];
+    fn decode(buf: &Self::Buf) -> Result<Self, DecodeError> {
+        crc8::validate(&buf[..])?;
+        Ok(Self::from_be_bytes([buf[0], buf[1]]))
+    }
+}
+
+impl Encode for u16 {
+    fn encode(self, buf: &mut [u8]) {
+        let bytes = self.to_be_bytes();
+        buf[0..2].copy_from_slice(&bytes);
+        buf[2] = crc8::calculate(&bytes);
+    }
+}

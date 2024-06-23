@@ -1,6 +1,6 @@
 use crate::{
-    cmd::{self, ReadCommand, WriteCommand},
-    msg::{self, Decode},
+    cmd::{self, ReadCommand, WriteCommand, WriteDataCommand},
+    msg::{self, Decode, Encode},
     Error, Mode, ParticulateMode, I2C_ADDR,
 };
 use embedded_hal_async::{delay::DelayNs, i2c::I2c};
@@ -64,6 +64,28 @@ where
         Ok(())
     }
 
+    async fn write_data_command<C>(
+        &mut self,
+        delay: &mut impl DelayNs,
+        data: C::Data,
+    ) -> Result<(), Error<I::Error>>
+    where
+        C: WriteDataCommand,
+    {
+        let mut buf = C::REQ_BUF;
+        {
+            let buf = buf.as_mut();
+            buf[..2].copy_from_slice(&C::COMMAND);
+            data.encode(&mut buf.as_mut()[2..]);
+        };
+        self.i2c
+            .write(self.addr, &buf.as_ref())
+            .await
+            .map_err(Error::I2cWrite)?;
+        delay.delay_ms(C::EXECUTION_MS as u32).await;
+        Ok(())
+    }
+
     pub async fn data_ready(&mut self, delay: &mut impl DelayNs) -> Result<bool, Error<I::Error>> {
         self.read_command::<cmd::ReadDataReady>(delay)
             .await
@@ -96,6 +118,23 @@ where
         self.write_command::<cmd::StopMeasurement>(delay).await?;
         self.mode = Mode::Idle;
         Ok(())
+    }
+
+    pub async fn read_warm_start_parameter(
+        &mut self,
+        delay: &mut impl DelayNs,
+    ) -> Result<u16, Error<I::Error>> {
+        self.read_command::<cmd::WarmStartParameter>(delay).await
+    }
+
+    pub async fn set_warm_start_parameter(
+        &mut self,
+        delay: &mut impl DelayNs,
+        param: u16,
+    ) -> Result<(), Error<I::Error>> {
+        self.mode.check(Mode::Idle)?;
+        self.write_data_command::<cmd::WarmStartParameter>(delay, param)
+            .await
     }
 
     pub async fn wait_for_data(&mut self, delay: &mut impl DelayNs) -> Result<(), Error<I::Error>> {

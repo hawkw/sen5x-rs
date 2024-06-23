@@ -1,4 +1,4 @@
-use crate::msg::{self, Decode};
+use crate::msg::{self, Decode, Encode};
 
 pub(crate) trait ReadCommand {
     const RSP_BUF: Self::RspBuf;
@@ -9,6 +9,12 @@ pub(crate) trait ReadCommand {
 pub(crate) trait WriteCommand {
     const COMMAND: [u8; 2];
     const EXECUTION_MS: usize;
+}
+
+pub(crate) trait WriteDataCommand: WriteCommand {
+    type Data: Encode;
+    const REQ_BUF: Self::ReqBuf;
+    type ReqBuf: AsMut<[u8]> + AsRef<[u8]>;
 }
 
 macro_rules! define_read_commands {
@@ -49,6 +55,13 @@ define_read_commands! {
     struct ReadRawSignals<msg::RawSignals>: 0x03D2, 20 ms, [12];
     struct ReadProductName<msg::RawString>: 0xD014, 20 ms, [47];
     struct ReadSerialNumber<msg::RawString>: 0xD033, 20 ms, [47];
+    struct WarmStartParameter<u16>: 0x60C6, 20 ms, [3];
+}
+
+impl WriteDataCommand for WarmStartParameter {
+    type Data = u16;
+    const REQ_BUF: Self::ReqBuf = [0; 5];
+    type ReqBuf = [u8; 5];
 }
 
 define_write_commands! {
