@@ -5,14 +5,14 @@ use crate::{
 };
 use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 
-pub struct AsyncSen5x<I> {
+pub struct Sen5xAsync<I> {
     i2c: I,
     mode: Mode,
     particulates: ParticulateMode,
     addr: u8,
 }
 
-impl<I> AsyncSen5x<I> {
+impl<I> Sen5xAsync<I> {
     pub const fn new(i2c: I) -> Self {
         Self {
             i2c,
@@ -35,7 +35,7 @@ impl<I> AsyncSen5x<I> {
     }
 }
 
-impl<I> AsyncSen5x<I>
+impl<I> Sen5xAsync<I>
 where
     I: I2c,
 {

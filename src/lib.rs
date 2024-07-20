@@ -9,7 +9,7 @@ pub use msg::*;
 const I2C_ADDR: u8 = 0x69; // nice!
 
 #[cfg(feature = "embedded-hal-async")]
-pub use self::asynchronous::AsyncSen5x;
+pub use self::asynchronous::Sen5xAsync;
 
 pub enum Error<E> {
     /// An I<sup>2</sup>C error occurred during a write operation.
