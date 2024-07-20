@@ -10,4 +10,4 @@ fmt = []
 bitflags = "2"
 embedded-hal-async = { version = "1.0", optional = true }
 embedded-hal = { version = "1.0" }
-sensirion-i2c = "0.3"
+sensirion-i2c = "0.4"

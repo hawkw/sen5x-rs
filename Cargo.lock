@@ -25,9 +25,9 @@ dependencies = [
 
 [[package]]
 name = "sensirion-i2c"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fb9009045fc9b4e9e37e670cc407baf85c216ebac2fb0932d4b6f490445bafc"
+checksum = "640a03c95c176226cf159ae2727f7fe3245546022639d61459af46d2878aec06"
 dependencies = [
  "embedded-hal",
 ]
